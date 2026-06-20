@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        h1 { color: #2d3748; margin-bottom: 8px; font-size: 2rem; }
+        p.subtitle { color: #718096; margin-bottom: 30px; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            margin-bottom: 30px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            outline: none;
+            transition: border 0.2s;
+        }
+        input[type="text"]:focus { border-color: #667eea; }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #5a67d8; }
+        .result {
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: #ebf8ff;
+            border-radius: 8px;
+            color: #2b6cb0;
+            display: none;
+        }
+        .result a { color: #2b6cb0; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            text-align: left;
+            padding: 10px 12px;
+            background: #f7fafc;
+            color: #4a5568;
+            font-size: 0.85rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+        td a { color: #667eea; text-decoration: none; }
+        td a:hover { text-decoration: underline; }
+        .empty { text-align: center; color: #a0aec0; padding: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🔗 URL Shortener</h1>
+    <p class="subtitle">Paste a long URL and get a short one instantly</p>
+
+    <div class="card">
+        <input type="text" id="urlInput" placeholder="https://example.com/very/long/url..." />
+        <button onclick="shortenURL()">Shorten URL</button>
+        <div class="result" id="result">
+            ✅ Short URL: <a id="shortLink" href="#" target="_blank"></a>
+            <button onclick="copyURL()" style="width:auto; padding: 6px 14px; margin-left:10px; font-size:0.85rem;">Copy</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 style="margin-bottom:16px; color:#2d3748;">Recent URLs</h2>
+        {% if urls %}
+        <table>
+            <tr>
+                <th>Short Code</th>
+                <th>Original URL</th>
+                <th>Created</th>
+            </tr>
+            {% for code, original, created in urls %}
+            <tr>
+                <td><a href="/{{ code }}" target="_blank">{{ code }}</a></td>
+                <td><a href="{{ original }}" target="_blank">{{ original[:50] }}{% if original|length > 50 %}...{% endif %}</a></td>
+                <td>{{ created[:10] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="empty">No URLs shortened yet. Try it above!</p>
+        {% endif %}
+    </div>
+
+    <script>
+        async function shortenURL() {
+            const url = document.getElementById('urlInput').value.trim();
+            if (!url) { alert('Please enter a URL'); return; }
+
+            const response = await fetch('/shorten', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url })
+            });
+
+            const data = await response.json();
+            if (data.short_url) {
+                const resultDiv = document.getElementById('result');
+                const shortLink = document.getElementById('shortLink');
+                shortLink.href = data.short_url;
+                shortLink.textContent = data.short_url;
+                resultDiv.style.display = 'block';
+            }
+        }
+
+        function copyURL() {
+            const link = document.getElementById('shortLink').textContent;
+            navigator.clipboard.writeText(link);
+            alert('Copied to clipboard!');
+        }
+    </script>
+</body>
+</html>
